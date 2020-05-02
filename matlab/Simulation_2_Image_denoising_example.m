@@ -51,20 +51,13 @@ for i=1:step:size(Y,1)-blocksize+1,
         y=reshape(y,[blocksize^2 q]);
         
         %%%%%%%%%%%%%% %recover sparse representation using SOMP %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %if (strcmp(flavor,'sparsity'))
-        %    s1 = SOMP2(A,y,'sparsity',k);
-        %else
-        %    s1 = SOMP2(A,y,'residue',c*sqrt(numel(y))*sigma_v);
-        %end
-        s1 = sniht(y,A,k);
         s2 = hubniht(y,A,k,[],1.345,0);
 
+
         %%%%%%%%%%%%%%%%%%%%%%%% construct noise free patches from their sparse representations %%%%%%%%%%%%
-        x_hat1=reshape(A*s1,[blocksize blocksize q]);
         x_hat2=reshape(A*s2,[blocksize blocksize q]);
         
         %%%%%%%%%%%%%%%%%%%%%%%% construct the whole noise free image from its patches %%%%%%%%%%%%
-        X_hat1(i:i+blocksize-1,j:j+blocksize-1,:)=X_hat1(i:i+blocksize-1,j:j+blocksize-1,:)+x_hat1;
         X_hat2(i:i+blocksize-1,j:j+blocksize-1,:)=X_hat2(i:i+blocksize-1,j:j+blocksize-1,:)+x_hat2;
 
     end
@@ -73,14 +66,8 @@ end
 beep; beep; beep;
 toc;
 
-X_hat1=X_hat1*(step/blocksize)^2;
 X_hat2=X_hat2*(step/blocksize)^2;
 
-figure;
-imshow(X_hat1(trim1,trim2,:));
-Err1=X_hat1(trim1,trim2)-X(trim1,trim2);
-PSNR1=-10*log10(mean(Err1(:).^2))
-title(['SOMP output with k = ', num2str(k), ' PSNR = ',num2str(PSNR1),' dB']);
 
 
 figure;
@@ -95,13 +82,6 @@ Diff=Diff+max(max(max(-Diff)));
 Diff=Diff/max(max(max(Diff)));
 figure;imshow(Diff);
 title('Difference between HUB-SNIHT and original');
-
-
-Diff=X_hat1(trim1,trim2,:)-X(trim1,trim2,:);
-Diff=Diff+max(max(max(-Diff)));
-Diff=Diff/max(max(max(Diff)));
-figure;imshow(Diff);
-title('Difference between SOMP and original');
 
 
 

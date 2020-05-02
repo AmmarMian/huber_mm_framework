@@ -9,17 +9,17 @@ Submitted to MLSP 2020 conference.
 
 It also helps with reproducibility of the results presented in the paper. It provides both matlab and python codes.
 
-WARNING: Python version is still under debug and isn't as trustworthy as the matlab one yet but is being worked on. The results in the paper have been obatined using the matlab version.
+WARNING: Python version is still under debug and isn't as trustworthy as the matlab one yet but is being worked on. The results in the paper have been obtained using the matlab version.
 
 ## Files' organization
 
-The repository is decomposed into two sibdirectories:
+The repository is decomposed into two subdirectories:
 - matlab/ which contains the matlab code. To reproduce the results presented in the paper, please run:
-  - 1 - Regression example.m
-  - 2 - Image denoising example.m
+  - Simulation_1_Regression_example.m
+  - Simulation_1_Image_denoising_example.m
 - python/ which contains the python code.
   - The main functions to execute Huber regression with the MM-framework are in the package mmhuber/. 
-  - Som examples of it are provided in the form of Jupyter notebooks in the subfolder notebooks/.
+  - Some examples of it are provided in the form of Jupyter notebooks in the subfolder notebooks/.
 
 
 ## Authors
