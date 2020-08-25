@@ -1,6 +1,6 @@
-function [b1, sig1, supp1,iter,failure] = hubniht(y,X,K,supp0,c,printitn)
+function [b1, sig1, supp1,iter,failure] = hubniht(y,X,K,supp0,sig0,b0,c,printitn)
 % 
-% Normalized Iterative Hard Thresholding (SNIHT) algorihtm of real-valued 
+% Normalized Iterative Hard Thresholding (NIHT) algorihtm of real-valued 
 % signals using Huber's criterion for joint estimation of regression and
 % scale. 
 % 
@@ -17,22 +17,30 @@ function [b1, sig1, supp1,iter,failure] = hubniht(y,X,K,supp0,c,printitn)
 %     supp1: estimated support, i.e., the index set of nonzeros elements
 %      sig1: the estimate of scale 
 %
+% Author: Esa Ollila, Aalto University, 2020
 %--------------------------------------------------------------------------
 
-
 [N, p] = size(X);
-wfun =  @(x,c) ( 1.*(x<=c) + (c*(1./x)).*(x>c) );
 
-if nargin < 6
+if nargin < 8
     printitn = 1; 
 end
 
-if nargin < 5 || isempty(c)
+if nargin < 7 || isempty(c)
    c = 1.3415;  % Default: approx 95 efficiency for Gaussian errors
 end
 
-if nargin < 4 
-    supp0 =[]; 
+if nargin < 6 || isempty(b0)
+    b0 = zeros(p,1); 
+end
+r = y - X*b0;
+
+if nargin < 5|| isempty(sig0)
+    sig0 = 1.4826*median(abs(r)); % initial scale statistic
+end
+
+if nargin < 4 || isempty(supp0)
+    supp0 = []; 
 end
 
 if K > N 
@@ -43,14 +51,10 @@ csq = c^2;
 % compute $\alpha$: consistency factor for scale 
 al = (1/2)*chi2cdf(csq,3)+ (csq/2)*(1-chi2cdf(csq,1));
   
-%%  initial values
-b0  = zeros(p,1); 
-sig0 = 1.4826*median(abs(y)); % initial scale statistic 
-
 %%  Detect the support
 if isempty(supp0)
     
-    ypsi = psihub(y/sig0,c)*sig0; % winsorized observations 
+    ypsi = psihub(r/sig0,c)*sig0; % winsorized observations 
     delta = X'*ypsi;  % correlations 
     [~, indx] = sort(abs(delta),'descend');
     supp0 = indx(1:K);
@@ -58,8 +62,8 @@ if isempty(supp0)
 end
   
 %% initialize 
-ITERMAX = 100;
-ERRORTOL = 1e-5; % ERROR TOLERANCE FOR HALTING CRITERION
+ITERMAX = 200;
+ERRORTOL = 1.0e-4; % ERROR TOLERANCE FOR HALTING CRITERION
 
 %% uncomment if you wish to do extra computations for debugging
 con =  sqrt((N-K)*2*al);
@@ -70,8 +74,6 @@ mu0  = 0;
 lam0 = 0;
 failure = false;
 
-r = y - X*b0;
-
 for iter = 1:ITERMAX 
         
     % STEP 2: update $\tau$
@@ -79,7 +81,7 @@ for iter = 1:ITERMAX
     
     % STEP 3: update step size for scale 
     % update only when crit 1 > 0.001
-    if crit1 > 0.001 && iter > 5
+    if crit1 > 0.001 && iter > 4
         lam_num = norm(psihub(r/(sig0*(tau^lam0)),c))/con;
         lam = lam0 + log(lam_num)/log(tau);  
         lam = max(0.01,min(lam,1.99));
@@ -99,10 +101,10 @@ for iter = 1:ITERMAX
     
     % STEP 6: update the step size of regression
     % update only when crit 1 > 0.001
-    if crit2 > 0.001
+    if crit2 > 0.001 && iter > 4
         z = X(:,supp0)*delta(supp0);
         tilde_r = r - mu0*z;
-        w  = wfun(abs(tilde_r)/sig1,c);        % weights
+        w  = whub(abs(tilde_r)/sig1,c);        % weights
         w(tilde_r==0) = 0.000001;
         mu2 = sum((z.^2).*w);
         mu1 = sum((z.*w).*r);
@@ -183,7 +185,7 @@ end
 
 if iter == ITERMAX
     failure = true;
-    fprintf('error!!! MAXiter = %d crit2 = %.7f\n',iter,crit2)
+ %   fprintf('error!!! MAXiter = %d crit2 = %.7f\n',iter,crit2)
 end
 
 supp1 = sort(supp1);
