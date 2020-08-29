@@ -31,7 +31,7 @@ if nargin < 7 || isempty(c)
 end
 
 if nargin < 6 || isempty(b0)
-    b0 = zeros(p,1); 
+    b0 = zeros(p,1); %sparse([],[],[],p,1,0);
 end
 r = y - X*b0;
 
@@ -62,8 +62,13 @@ if isempty(supp0)
 end
   
 %% initialize 
-ITERMAX = 200;
-ERRORTOL = 1.0e-4; % ERROR TOLERANCE FOR HALTING CRITERION
+ITERMAX = 250;
+%ERRORTOL1 = 5.0e-4; % ERROR TOLERANCE FOR SCALE (joint)
+%ERRORTOL2 = 5.0e-4; % ERROR TOLERANCE FOR REGRESSION (joint)
+%ERRORTOL3 = 1.0e-4; % ERROR TOLERANCE FOR REGRESSION
+ERRORTOL1 = 1.0e-3; % ERROR TOLERANCE FOR SCALE (joint)
+ERRORTOL2 = 1.0e-3; % ERROR TOLERANCE FOR REGRESSION (joint)
+ERRORTOL3 = 5.0e-4; % ERROR TOLERANCE FOR REGRESSION
 
 %% uncomment if you wish to do extra computations for debugging
 con =  sqrt((N-K)*2*al);
@@ -121,10 +126,12 @@ for iter = 1:ITERMAX
     b1tmp = b0 + update2; 
     [~, indx] = sort(abs(b1tmp),'descend');
     supp1 = indx(1:K);
-    b1    = zeros(p,1);
-    b1(supp1) = b1tmp(supp1,:);
-      
-    r = y - X*b1;
+    %b1    = zeros(p,1);
+    %b1(supp1) = b1tmp(supp1,:);
+    b1 = sparse(supp1,1,b1tmp(supp1),p,1,K);
+  
+    %r = y - X*b1;
+    r = y - X(:,supp1)*b1(supp1);
     objnew = sig1*sum(rhohub(r/sig1,c))/(N-K) + al*sig1;
 
     while objnew > objold && iter > 4
@@ -135,9 +142,8 @@ for iter = 1:ITERMAX
         b1tmp = b0 + mu*delta;
         [~, indx] = sort(abs(b1tmp),'descend');
         supp1 = indx(1:K);
-        b1    = zeros(p,1);
-        b1(supp1) = b1tmp(supp1,:);
-         
+        b1 = sparse(supp1,1,b1tmp(supp1),p,1,K);
+
         % Update objnew
         r = y - X(:,supp1)*b1(supp1);
 
@@ -165,10 +171,11 @@ for iter = 1:ITERMAX
         end
     end
     
-    if (crit2 < ERRORTOL  && crit1 < ERRORTOL)
-        break;
-    end 
-        
+    
+    if (crit2 < ERRORTOL1  && crit1 < ERRORTOL2) || crit2 < ERRORTOL3
+      break 
+    end       
+    
     b0 = b1; 
     sig0 = sig1; 
     mu0 = mu;
@@ -185,7 +192,6 @@ end
 
 if iter == ITERMAX
     failure = true;
- %   fprintf('error!!! MAXiter = %d crit2 = %.7f\n',iter,crit2)
 end
 
-supp1 = sort(supp1);
+%supp1 = sort(supp1);

@@ -81,40 +81,21 @@ if horizontal
     parfor i = 1:Imx
 
         supp1 = supp1in; s1 = s1in; sig1 = sig1in; 
-        %supp2 = supp2in; s2 = s2in; sig2 = sig2in; 
-
         ctmp1 = zeros(size(A,2),Imx);
-        %ctmp2 = zeros(size(A,2),Imx);
-
         D1 = Data1(:,(i-1)*Imx + (1:Imx)); 
-        %D2 = Data2(:,(i-1)*Imx + (1:Imx)); 
 
         for  j = 1:Imx
-
-            %% recover sparse representation
-            %-- HUBNIHT row-wise direction
-
             [s1,sig1,supp1] = hubniht(D1(:,j),A,K,supp1,sig1,s1,c,0);
             ctmp1(:,j) = s1;
-            %-- HUBNIHT column-wise direction
-            %[s2,sig2,supp2] = hubniht(D2(:,j),A,K,supp2,sig2,s2,c,0);
-            %ctmp2(:,j) = s2;
-
         end  
 
         CoefMat1{i} = ctmp1;
-        %CoefMat2{i}=ctmp2;
-
     end
     
     CoefMat1 = cell2mat(CoefMat1);
-    %CoefMat2 = cell2mat(CoefMat2);
-
     yout = RecoverImage(N,A,CoefMat1,'horizontal'); 
-    %yout_v = RecoverImage(N,A,CoefMat2,'vertical'); 
 
     yout = yout./Weight; 
-    %yout_v = yout_v./Weight; 
     yout_h = []; yout_v = [];
     
 else
@@ -131,11 +112,10 @@ else
 
         for  j = 1:Imx
 
-            %% recover sparse representation
-            %-- HUBNIHT row-wise direction
+            %-- horizontal scan 
             [s1,sig1,supp1] = hubniht(D1(:,j),A,K,supp1,sig1,s1,c,0);
             ctmp1(:,j) = s1;
-            %-- HUBNIHT column-wise direction
+            %-- vertical scan 
             [s2,sig2,supp2] = hubniht(D2(:,j),A,K,supp2,sig2,s2,c,0);
             ctmp2(:,j) = s2;
 

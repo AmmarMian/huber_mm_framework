@@ -47,8 +47,10 @@ end
 csq = c^2; 
 al = (1/2)*chi2cdf(csq,3)+ (csq/2)*(1-chi2cdf(csq,1)); % consistency factor for scale 
   
-ITERMAX = 1000;
-ERRORTOL = 1e-5; % ERROR TOLERANCE FOR HALTING CRITERION
+ITERMAX = 300;
+ERRORTOL1 = 1.0e-3; % ERROR TOLERANCE FOR SCALE (joint)
+ERRORTOL2 = 1.0e-3; % ERROR TOLERANCE FOR REGRESSION (joint)
+ERRORTOL3 = 5.0e-4; % ERROR TOLERANCE FOR REGRESSION
 
 Xplus = pinv(X);
 con  = sqrt((N-p)*2*al);
@@ -69,14 +71,14 @@ for iter=1:ITERMAX
     
     % STEP 3: update step size for scale 
     % update only when crit 1 > 0.001
-    if crit1 > 0.001
+    if crit1 > 0.001 
         lam_num = norm(psihub(r/(sig0*(tau^lam0)),c))/con;
         lam = lam0 + log(lam_num)/log(tau);  
         lam = max(0.01,min(lam,1.99));
     else
         lam = lam0;
     end
-    
+
     % STEP 4: update the scale 
     update1 = tau^lam;
     sig1 = sig0*update1;
@@ -87,7 +89,7 @@ for iter=1:ITERMAX
 
     % STEP 6: update the step size of regression
     % update only when crit 1 > 0.001
-    if crit2 > 0.001
+    if crit2 > 0.001 
         z = X*delta;
         tilde_r = r - mu0*z;
         w  = wfun(abs(tilde_r)/sig1,c);        % weights
@@ -98,7 +100,7 @@ for iter=1:ITERMAX
     else
         mu = mu0;
     end
-    
+
     update2  = mu*delta;
     
     % STEP 7: update the regression vector:
@@ -109,8 +111,7 @@ for iter=1:ITERMAX
     crit1 = abs(update1 - 1);
      
     if mod(iter,printitn)==0
-    %        fprintf('hubreg: crit(%4d) = %.9f\n',iter,crit2); 
-    %   if mod(iter,printitn)==0
+
       tmp1 = (y-X*b1)/sig1;
       tmp2 = psihub(tmp1,c)*sig1;     
       esteq_beta  = X'*tmp2/N;
@@ -124,7 +125,7 @@ for iter=1:ITERMAX
     end
    
    
-   if (crit2 < ERRORTOL  && crit1 < ERRORTOL)
+   if (crit2 < ERRORTOL1  && crit1 < ERRORTOL2) || crit2 < ERRORTOL3
       break 
    end   
    
@@ -140,7 +141,7 @@ if mod(iter,printitn)==0
 end 
 
 if iter == ITERMAX
-    fprintf('error!!! MAXiter = %d crit2 = %.7f\n',iter,crit2)
+    fprintf('error!!! MAXiter = %d crit1 = %.7f crit2 = %.7f\n',iter,crit1,crit2);
 end
 
 
